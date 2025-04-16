@@ -7,7 +7,6 @@ import { NavItem } from "./types";
 import { navbarVariants } from "./animations";
 import { NavLogo } from "./NavLogo"; // Fixed casing to match file name
 import { UserMenu } from "./UserMenu";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
@@ -216,14 +215,6 @@ export function Navbar() {
           </div>
           
           <div className="flex items-center">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mr-4"
-            >
-              <ThemeToggle />
-            </motion.div>
             <UserMenu user={user} onLogout={handleLogout} />
             
             {/* Mobile menu button */}
