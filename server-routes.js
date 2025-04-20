@@ -1,20 +1,17 @@
 import { createServer } from 'http';
-import { pool } from './dist/db.js';
 
 // Simple test route
 const testRoute = (req, res) => {
   res.json({ message: "API is working!" });
 };
 
-// Example user route to test database connection
-const getUsersRoute = async (req, res) => {
-  try {
-    const result = await pool.query('SELECT id, name, email FROM users LIMIT 10');
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ error: 'Database error', details: error.message });
-  }
+// Health check route
+const healthCheckRoute = (req, res) => {
+  res.json({ 
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 };
 
 // Register all API routes
@@ -24,9 +21,16 @@ export function registerRoutes(app) {
   
   // Register API routes
   app.get('/api/test', testRoute);
-  app.get('/api/users', getUsersRoute);
+  app.get('/api/health', healthCheckRoute);
   
-  // Add more routes here as needed
+  // API fallback route
+  app.use('/api/*', (req, res) => {
+    res.status(404).json({ 
+      error: 'API endpoint not found',
+      path: req.path,
+      method: req.method
+    });
+  });
   
   return server;
 } 

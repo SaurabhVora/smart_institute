@@ -3,13 +3,24 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import fs from 'fs';
-
-// Import the routes registration function
-import { registerRoutes } from './server-routes.js';
+import { createServer } from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Define a fallback routes function
+const fallbackRegisterRoutes = (app) => {
+  const server = createServer(app);
+  
+  // Simple test API route
+  app.get('/api/test', (req, res) => {
+    res.json({ message: 'Fallback API route is working' });
+  });
+  
+  return server;
+};
+
+// Create the Express app
 const app = express();
 const PORT = process.env.PORT || 10000;
 
@@ -20,42 +31,64 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Log request info
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
 // Serve static files from the dist/public directory
-app.use(express.static(path.join(__dirname, 'dist', 'public')));
+console.log('Public directory path:', path.join(__dirname, 'dist', 'public'));
+const publicPath = path.join(__dirname, 'dist', 'public');
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath));
+  console.log('Serving static files from', publicPath);
+} else {
+  console.warn('Public directory not found at', publicPath);
+}
 
 // Serve files from uploads directory if it exists
 const uploadsPath = path.join(__dirname, 'uploads');
 if (fs.existsSync(uploadsPath)) {
   app.use('/uploads', express.static(uploadsPath));
+  console.log('Serving uploads from', uploadsPath);
+} else {
+  console.warn('Uploads directory not found at', uploadsPath);
 }
 
-// Register API routes from your backend
+// Try to import the routes
+let server;
 try {
-  const server = registerRoutes(app);
+  const routesModule = await import('./server-routes.js');
+  const registerRoutes = routesModule.registerRoutes;
+  console.log('Routes module imported successfully');
+  server = registerRoutes(app);
   console.log('API routes registered successfully');
-  
-  // Start the server
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`PORT=${PORT}`);
-  });
 } catch (error) {
-  console.error('Error registering API routes:', error);
-  
-  // Fallback to running without API routes
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (without API routes)`);
-    console.log(`PORT=${PORT}`);
-  });
+  console.error('Error importing routes module:', error);
+  server = fallbackRegisterRoutes(app);
+  console.log('Using fallback API routes');
 }
 
 // For all other routes that are not API, serve the index.html
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, 'dist', 'public', 'index.html'));
+    const indexPath = path.join(__dirname, 'dist', 'public', 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.warn('index.html not found at', indexPath);
+      res.status(404).send('Frontend not found. Please check build configuration.');
+    }
   } else {
     res.status(404).json({ error: 'API route not found' });
   }
+});
+
+// Start the server
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`PORT=${PORT}`);
 });
 
 // Keep the process running
