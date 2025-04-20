@@ -45,6 +45,14 @@ async function getAppliedMigrations() {
 // Run migrations
 export async function runMigrations() {
   console.log('Starting migrations...');
+  
+  // Skip migrations in production unless explicitly forced
+  if (process.env.NODE_ENV === 'production' && process.env.FORCE_MIGRATIONS !== 'true') {
+    console.log('Skipping automatic migrations in production environment');
+    console.log('Set FORCE_MIGRATIONS=true to override this behavior');
+    return;
+  }
+  
   await ensureMigrationsTable();
   
   const migrationFiles = await getMigrationFiles();
@@ -101,15 +109,18 @@ export async function runMigrations() {
   console.log('All migrations applied successfully.');
 }
 
+// Check if this file is being run directly and not imported
+const isRunningDirectly = import.meta.url === pathToFileURL(process.argv[1]).href;
+
 // Run migrations when script is executed directly (ESM version)
-if (import.meta.url.startsWith('file:') && process.argv[1] && import.meta.url.endsWith(process.argv[1])) {
+if (isRunningDirectly) {
   runMigrations()
     .then(() => {
       console.log('Migration process completed');
-      process.exit(0);
+      process.exit(0); // Only exit if run directly as a script
     })
     .catch(error => {
       console.error('Migration error:', error);
-      process.exit(1);
+      process.exit(1); // Only exit if run directly as a script
     });
 } 
