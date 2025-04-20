@@ -15,7 +15,8 @@
     "db:migrate": "tsx server/migrate.ts",
     "migrate:s3": "node scripts/migrate-to-s3.js",
     "migrate:resumes": "tsx server/scripts/migrate-resume-paths.ts",
-    "update:resume-filenames": "tsx server/scripts/update-resume-filenames.ts"
+    "update:resume-filenames": "tsx server/scripts/update-resume-filenames.ts",
+    "render:migrate": "cross-env FORCE_MIGRATIONS=true node server.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.540.0",
