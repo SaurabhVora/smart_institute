@@ -90,18 +90,33 @@ async function startServer() {
     // In production environments like Render, we should bind to 0.0.0.0
     const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
     
+    // VERY IMPORTANT: Log the port for Render to detect
+    console.log(`Server will listen on port ${PORT}`);
+    
     // Start server with proper error handling
     server.listen(PORT, HOST, () => {
       log(`Server started on ${HOST}:${PORT}`);
       // Add explicit console.log for Render to detect
       console.log(`Server listening on port ${PORT}`);
+      // Extra logging specifically for Render
+      if (process.env.RENDER) {
+        console.log(`PORT=${PORT}`);
+        console.log(`Running on Render.com`);
+      }
     }).on('error', (e: any) => {
       if (e.code === 'EADDRINUSE') {
         log(`Port ${PORT} is busy, trying ${PORT + 1}`);
-        server.listen(PORT + 1, HOST, () => {
-          log(`Server started on ${HOST}:${PORT + 1}`);
+        const newPort = PORT + 1;
+        console.log(`Server will listen on port ${newPort}`);
+        server.listen(newPort, HOST, () => {
+          log(`Server started on ${HOST}:${newPort}`);
           // Add explicit console.log for Render to detect
-          console.log(`Server listening on port ${PORT + 1}`);
+          console.log(`Server listening on port ${newPort}`);
+          // Extra logging specifically for Render
+          if (process.env.RENDER) {
+            console.log(`PORT=${newPort}`);
+            console.log(`Running on Render.com`);
+          }
         }).on('error', (innerErr) => {
           log(`Failed to start server on alternate port: ${innerErr.message}`);
         });
