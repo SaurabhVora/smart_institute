@@ -93,11 +93,15 @@ async function startServer() {
     // Start server with proper error handling
     server.listen(PORT, HOST, () => {
       log(`Server started on ${HOST}:${PORT}`);
+      // Add explicit console.log for Render to detect
+      console.log(`Server listening on port ${PORT}`);
     }).on('error', (e: any) => {
       if (e.code === 'EADDRINUSE') {
         log(`Port ${PORT} is busy, trying ${PORT + 1}`);
         server.listen(PORT + 1, HOST, () => {
           log(`Server started on ${HOST}:${PORT + 1}`);
+          // Add explicit console.log for Render to detect
+          console.log(`Server listening on port ${PORT + 1}`);
         }).on('error', (innerErr) => {
           log(`Failed to start server on alternate port: ${innerErr.message}`);
         });
